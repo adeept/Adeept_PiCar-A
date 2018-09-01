@@ -32,6 +32,7 @@ r_stu=0
 
 BtnIP=''
 ipaddr=''
+ipcon=0
 
 def replace_path(initial,new_num):  
     newline=""
@@ -55,24 +56,37 @@ def import_path(initial):
     return n             #Call this function to import data from '.txt' file
 
 def video_show():
+    global ipcon
     server_socket = socket()
     server_socket.bind(('0.0.0.0', 8000))
     server_socket.listen(0)
-
     connection = server_socket.accept()[0].makefile('rb')
     try:
         vlc_path=import_path('addr:')
         cmdline = [vlc_path, '--demux', 'h264', '-']
         player = subprocess.Popen(cmdline, stdin=subprocess.PIPE)
         while True:
-            data = connection.read(128)
-            if not data:
+            try:
+                data = connection.read(128)
+                if not data:
+                    break
+            except:
+                pass
+            try:
+                player.stdin.write(data)
+            except:
+                connection.close()
+                server_socket.close()
+                player.terminate()                     #Call this function to set up a server for the car to send the video back
+                BtnIP.config(state='normal')
+                ipcon=0
                 break
-            player.stdin.write(data)
     finally:
         connection.close()
         server_socket.close()
         player.terminate()                     #Call this function to set up a server for the car to send the video back
+        BtnIP.config(state='normal')
+        ipcon=0
 
 def ip_send():
     time.sleep(1)
@@ -83,18 +97,22 @@ def call_forward(event):         #When this function is called,client commands t
     global c_f_stu
     if (c_f_stu == 0) & ((l_stu+r_stu)==0):
         tcpClicSock.send(('forward').encode())
+        print('forward')
         c_f_stu=1
 
 def call_back(event):            #When this function is called,client commands the car to move backward
     global c_b_stu 
     if c_l_stu == 1:
         tcpClicSock.send(('BLe').encode())
+        print('Backward Left')
         c_b_stu=1
     elif c_r_stu == 1:
         tcpClicSock.send(('BRi').encode())
+        print('Backward Right')
         c_b_stu=1
     elif c_b_stu == 0:
         tcpClicSock.send(('backward').encode())
+        print('Backward')
         c_b_stu=1
 
 def call_left(event):            #When this function is called,client commands the camera to look left
@@ -107,22 +125,23 @@ def call_Left(event):            #When this function is called,client commands t
     global c_l_stu,b_l_stu
     if c_l_stu == 0 & c_b_stu==0:
         tcpClicSock.send(('Left').encode())
+        print('Turn Left')
         c_l_stu=1
         if c_b_stu == 1:
             print(c_b_stu)
-            #tcpClicSock.send(('stop').encode())
             tcpClicSock.send(('BLe').encode())
-            print('BLeft')
+            print('Backward Left')
             b_l_stu=1
 
 def call_Right(event):           #When this function is called,client commands the car to turn right
     global c_r_stu,b_r_stu
     if c_r_stu == 0 & c_b_stu==0:
         tcpClicSock.send(('Right').encode())
+        print('Turn Right')
         c_r_stu=1
         if c_b_stu == 1:
             tcpClicSock.send(('BRi').encode())
-            print('BRight')
+            print('Backward Right')
             b_r_stu=1
 
 def call_stop(event):            #When this function is called,client commands the car to stop moving
@@ -139,7 +158,7 @@ def call_stop(event):            #When this function is called,client commands t
     r_stu=0
 
     tcpClicSock.send(('stop').encode())
-    print('stop')
+    print('Stop')
 
 def call_home(event):            #When this function is called,client commands the camera to look forward
     tcpClicSock.send(('home').encode())
@@ -205,10 +224,10 @@ def loop():                       #GUI
 
         root = tk.Tk()            #Define a window named root
         root.title('Adeept')      #Main window title
-        root.geometry('917x930')  #Main window size, middle of the English letter x.
+        root.geometry('917x630')  #Main window size, middle of the English letter x.
         root.config(bg=color_bg)  #Set the background color of root window
 
-        can_scan = tk.Canvas(root,bg=color_can,height=600,width=740,highlightthickness=0) #define a canvas
+        can_scan = tk.Canvas(root,bg=color_can,height=300,width=740,highlightthickness=0) #define a canvas
         can_scan.place(x=30,y=90) #Place the canvas
         
         var_spd = tk.StringVar()  #Speed value saved in a StringVar
@@ -221,43 +240,41 @@ def loop():                       #GUI
         l_logo=tk.Label(root,image = logo,bg=color_bg) #Set a label to show the logo picture
         l_logo.place(x=30,y=13)                        #Place the Label in a right position
 
+        line = can_scan.create_line(0,75,740,75,fill='darkgray') #Draw a line on canvas
         line = can_scan.create_line(0,150,740,150,fill='darkgray') #Draw a line on canvas
-        line = can_scan.create_line(0,300,740,300,fill='darkgray') #Draw a line on canvas
-        line = can_scan.create_line(0,450,740,450,fill='darkgray') #Draw a line on canvas
+        line = can_scan.create_line(0,225,740,225,fill='darkgray') #Draw a line on canvas
 
-        arc_1 = can_scan.create_arc(220,450,520,800,outline='darkgray',extent=180,style='arc')    #Draw a arc on canvas
-        arc_1 = can_scan.create_arc(70,300,670,1000,outline='darkgray',extent=180,style='arc')    #Draw a arc on canvas
-        arc_1 = can_scan.create_arc((-80),150,820,1200,outline='darkgray',extent=180,style='arc') #Draw a arc on canvas
-        arc_1 = can_scan.create_arc((-230),0,970,1400,outline='darkgray',extent=180,style='arc')  #Draw a arc on canvas
+        arc_1 = can_scan.create_arc(185,150,555,450,outline='darkgray',extent=180,style='arc')    #Draw a arc on canvas
+        arc_1 = can_scan.create_arc(0,0,740,600,outline='darkgray',extent=180,style='arc')    #Draw a arc on canvas
 
         BtnC1 = tk.Button(root, width=15, text='Camera Middle',fg=color_text,bg=color_btn,relief='ridge')
         BtnC1.place(x=785,y=10)
-        E_C1 = tk.Entry(root,show=None,width=16,bg="#37474F",fg='#eceff1')
-        E_C1.place(x=785,y=45)                             #Define a Entry and put it in position
+        E_C1 = tk.Entry(root,show=None,width=16,bg="#37474F",fg='#eceff1',exportselection=0,justify='center')
+        E_C1.place(x=785,y=45)                            #Define a Entry and put it in position
 
         BtnC2 = tk.Button(root, width=15, text='Ultrasonic Middle',fg=color_text,bg=color_btn,relief='ridge')
         BtnC2.place(x=785,y=100)
-        E_C2 = tk.Entry(root,show=None,width=16,bg="#37474F",fg='#eceff1')
+        E_C2 = tk.Entry(root,show=None,width=16,bg="#37474F",fg='#eceff1',exportselection=0,justify='center')
         E_C2.place(x=785,y=135)                             #Define a Entry and put it in position
 
         BtnM1 = tk.Button(root, width=15, text='Motor A Speed',fg=color_text,bg=color_btn,relief='ridge')
         BtnM1.place(x=785,y=190)
-        E_M1 = tk.Entry(root,show=None,width=16,bg="#37474F",fg='#eceff1')
+        E_M1 = tk.Entry(root,show=None,width=16,bg="#37474F",fg='#eceff1',exportselection=0,justify='center')
         E_M1.place(x=785,y=225)                             #Define a Entry and put it in position
 
         BtnM2 = tk.Button(root, width=15, text='Motor B Speed',fg=color_text,bg=color_btn,relief='ridge')
         BtnM2.place(x=785,y=280)
-        E_M2 = tk.Entry(root,show=None,width=16,bg="#37474F",fg='#eceff1')
+        E_M2 = tk.Entry(root,show=None,width=16,bg="#37474F",fg='#eceff1',exportselection=0,justify='center')
         E_M2.place(x=785,y=315)                             #Define a Entry and put it in position
 
         BtnT1 = tk.Button(root, width=15, text='Motor A Turning',fg=color_text,bg=color_btn,relief='ridge')
         BtnT1.place(x=785,y=370)
-        E_T1 = tk.Entry(root,show=None,width=16,bg="#37474F",fg='#eceff1')
+        E_T1 = tk.Entry(root,show=None,width=16,bg="#37474F",fg='#eceff1',exportselection=0,justify='center')
         E_T1.place(x=785,y=405)                             #Define a Entry and put it in position
 
         BtnT2 = tk.Button(root, width=15, text='Motor B Turning',fg=color_text,bg=color_btn,relief='ridge')
         BtnT2.place(x=785,y=460)
-        E_T2 = tk.Entry(root,show=None,width=16,bg="#37474F",fg='#eceff1')
+        E_T2 = tk.Entry(root,show=None,width=16,bg="#37474F",fg='#eceff1',exportselection=0,justify='center')
         E_T2.place(x=785,y=495)                             #Define a Entry and put it in position
 
         BtnVLC = tk.Button(root, width=15, text='VLC Path',fg=color_text,bg=color_btn,relief='ridge')
@@ -265,18 +282,26 @@ def loop():                       #GUI
         E_VLC = tk.Entry(root,show=None,width=16,bg="#37474F",fg='#eceff1')
         E_VLC.place(x=785,y=585)                             #Define a Entry and put it in position
 
-        l_inter=tk.Label(root,width=16,height=15,text='Default Value:\nCamera Middle:\n425\nUltrasonic Middle:\n425\nMotor A Speed:\n90\nMotor B Speed:\n90\nMotor A Turning:\n30\nMotor B Turning:\n30\nTo use new value\nRestart server.py' ,
-        fg='#212121',bg='#90a4ae')
-        l_inter.place(x=785,y=645)  
+        E_C1.insert ( 0, 'Default:425' ) 
+        E_C2.insert ( 0, 'Default:425' ) 
+        E_M1.insert ( 0, 'Default:100' ) 
+        E_M2.insert ( 0, 'Default:100' )
+        E_T1.insert ( 0, 'Default:30' ) 
+        E_T2.insert ( 0, 'Default:30' )
+        E_VLC.insert ( 0, '%s'%import_path('addr:') )  
 
         def ipcon(event):
-            BtnIP.config(state='disabled')
-            vs=thread.Thread(target=video_show)   #Define a thread for video stream receiving
-            vs.setDaemon(True)                    #'True' means it is a front thread,it would close when the mainloop() closes
-            vs.start()                            #Thread starts
-            ip_send_thread=thread.Thread(target=ip_send)
-            ip_send_thread.setDaemon(True)
-            ip_send_thread.start()
+            global ipcon
+            if ipcon == 0:
+                print('set up video server')
+                BtnIP.config(state='disabled')
+                ipcon=1
+                vs=thread.Thread(target=video_show)   #Define a thread for video stream receiving
+                vs.setDaemon(True)                    #'True' means it is a front thread,it would close when the mainloop() closes
+                vs.start()                            #Thread starts
+                ip_send_thread=thread.Thread(target=ip_send)
+                ip_send_thread.setDaemon(True)
+                ip_send_thread.start()
 
         def spd_set():                 #Call this function for speed adjustment
             tcpClicSock.send(('spdset:%s'%var_spd.get()).encode())   #Get a speed value from IntVar and send it to the car
@@ -305,7 +330,6 @@ def loop():                       #GUI
             if len(new_path) > 7:
                 replace_path('addr:',new_path)
 
-
         def connect(event):       #Call this function to connect with the server
             if ip_stu == 1:
                 sc=thread.Thread(target=socket_connect) #Define a thread for connection
@@ -327,6 +351,7 @@ def loop():                       #GUI
                 l_ip_4.config(text='Connecting')
                 l_ip_4.config(bg='#FF8F00')
                 l_ip_5.config(text='Default:%s'%ip_adr)
+                E1.insert ( 0, '%s'%ip_adr ) 
                 pass
             
             SERVER_IP = ip_adr
@@ -375,6 +400,7 @@ def loop():                       #GUI
                 l_ip_4.config(bg='#F44336')
 
         def code_receive():     #A function for data receiving
+            global ipcon
             while True:
                 code_car = tcpClicSock.recv(BUFSIZ) #Listening,and save the data in 'code_car'
                 l_ip.config(text=code_car)          #Put the data on the label
@@ -403,20 +429,20 @@ def loop():                       #GUI
                     
                     dis_list=f_list
 
-                    can_scan_1 = tk.Canvas(root,bg=color_can,height=600,width=740,highlightthickness=0) #define a new canvas
+                    can_scan_1 = tk.Canvas(root,bg=color_can,height=300,width=740,highlightthickness=0) #define a new canvas
                     can_scan_1.place(x=30,y=90)                                                         #And put it in the same position as the old one
 
                     x_range = var_x_scan.get()          #Get the value of scan range from IntVar
 
                     for i in range (0,len(dis_list)):   #Scale the result to the size as canvas
                         try:
-                            len_dis_1 = int((dis_list[i]/x_range)*600)                          #600 is the height of canvas
+                            len_dis_1 = int((dis_list[i]/x_range)*300)                          #600 is the height of canvas
                             pos     = int((i/len(dis_list))*740)                                #740 is the width of canvas
                             pos_ra  = int(((i/len(dis_list))*140)+20)                           #Scale the direction range to (20-160)
                             len_dis = int(len_dis_1*(math.sin(math.radians(pos_ra))))           #len_dis is the height of the line
 
-                            x0_l,y0_l,x1_l,y1_l=pos,(600-len_dis),pos,(600-len_dis)             #The position of line
-                            x0,y0,x1,y1=(pos+3),(600-len_dis+3),(pos-3),(600-len_dis-3)         #The position of arc
+                            x0_l,y0_l,x1_l,y1_l=pos,(300-len_dis),pos,(300-len_dis)             #The position of line
+                            x0,y0,x1,y1=(pos+3),(300-len_dis+3),(pos-3),(300-len_dis-3)         #The position of arc
 
                             if pos <= 370:                                                      #Scale the whole picture to a shape of sector
                                 pos = 370-abs(int(len_dis_1*(math.cos(math.radians(pos_ra)))))
@@ -432,19 +458,35 @@ def loop():                       #GUI
                         except:
                             pass
 
+                    line = can_scan_1.create_line(0,75,740,75,fill='darkgray')                #Draw a line on canvas
                     line = can_scan_1.create_line(0,150,740,150,fill='darkgray')                #Draw a line on canvas
-                    line = can_scan_1.create_line(0,300,740,300,fill='darkgray')                #Draw a line on canvas
-                    line = can_scan_1.create_line(0,450,740,450,fill='darkgray')                #Draw a line on canvas
+                    line = can_scan_1.create_line(0,225,740,225,fill='darkgray')                #Draw a line on canvas
 
-                    arc_1 = can_scan_1.create_arc(220,450,520,800,outline='darkgray',extent=180,style='arc')    #Draw a arc on canvas
-                    arc_1 = can_scan_1.create_arc(70,300,670,1000,outline='darkgray',extent=180,style='arc')    #Draw a arc on canvas
-                    arc_1 = can_scan_1.create_arc((-80),150,820,1200,outline='darkgray',extent=180,style='arc') #Draw a arc on canvas
-                    arc_1 = can_scan_1.create_arc((-230),0,970,1400,outline='darkgray',extent=180,style='arc')  #Draw a arc on canvas
+                    arc_1 = can_scan_1.create_arc(185,150,555,450,outline='darkgray',extent=180,style='arc')    #Draw a arc on canvas
+                    arc_1 = can_scan_1.create_arc(0,0,740,600,outline='darkgray',extent=180,style='arc')    #Draw a arc on canvas
 
-                    can_tex_11=can_scan_1.create_text((27,442),text=round((x_range/4),2),fill='#aeea00')     #Create a text on canvas
-                    can_tex_12=can_scan_1.create_text((27,292),text=round((x_range/2),2),fill='#aeea00')     #Create a text on canvas
-                    can_tex_13=can_scan_1.create_text((27,142),text=round((x_range*0.75),2),fill='#aeea00')  #Create a text on canvas
+                    can_tex_11=can_scan_1.create_text((27,217),text='%sm'%round((x_range/4),2),fill='#aeea00')     #Create a text on canvas
+                    can_tex_12=can_scan_1.create_text((27,142),text='%sm'%round((x_range/2),2),fill='#aeea00')     #Create a text on canvas
+                    can_tex_13=can_scan_1.create_text((27,67),text='%sm'%round((x_range*0.75),2),fill='#aeea00')  #Create a text on canvas
                 
+                if 'SET' in str(code_car):
+                    set_list=code_car.decode()
+                    set_list=set_list.split()
+                    s1,s2,s3,s4,s5,s6=set_list[1:]
+                    E_C1.delete(0,50)
+                    E_C2.delete(0,50)
+                    E_M1.delete(0,50)
+                    E_M2.delete(0,50)
+                    E_T1.delete(0,50)
+                    E_T2.delete(0,50)
+
+                    E_C1.insert ( 0, '%d'%int(s1) ) 
+                    E_C2.insert ( 0, '%d'%int(s2) ) 
+                    E_M1.insert ( 0, '%d'%int(s3) ) 
+                    E_M2.insert ( 0, '%d'%int(s4) )
+                    E_T1.insert ( 0, '%d'%int(s5) ) 
+                    E_T2.insert ( 0, '%d'%int(s6) )
+
                 elif '1' in str(code_car):               #Translate the code to text
                     l_ip.config(text='Moving Forward')   #Put the text on the label
                 elif '2' in str(code_car):               #Translate the code to text
@@ -465,33 +507,36 @@ def loop():                       #GUI
                     l_ip.config(text='Stop')             #Put the text on the label
                 elif '0' in str(code_car):               #Translate the code to text
                     l_ip.config(text='Auto Mode On')     #Put the text on the label
+                elif 'video_off' in str(code_car):
+                    BtnIP.config(state='normal')
+                    ipcon=0
 
 
         s1 = tk.Scale(root,label="               < Slow   Speed Adjustment   Fast >",
         from_=0.4,to=1,orient=tk.HORIZONTAL,length=400,
         showvalue=0.1,tickinterval=0.1,resolution=0.2,variable=var_spd,fg=color_text,bg=color_bg,highlightthickness=0)
-        s1.place(x=200,y=700)                            #Define a Scale and put it in position
+        s1.place(x=200,y=400)                            #Define a Scale and put it in position
 
-        s2 = tk.Scale(root,label="< Near   Scan Range Adjustment   Far >",
+        s2 = tk.Scale(root,label="< Near   Scan Range Adjustment(Meter(s))   Far >",
         from_=1,to=5,orient=tk.HORIZONTAL,length=300,
         showvalue=1,tickinterval=1,resolution=1,variable=var_x_scan,fg=color_text,bg=color_bg,highlightthickness=0)
         s2.place(x=390,y=0)                              #Define a Scale and put it in position
 
         l_ip=tk.Label(root,width=18,text='Status',fg=color_text,bg=color_btn)
-        l_ip.place(x=30,y=710)                           #Define a Label and put it in position
+        l_ip.place(x=30,y=410)                           #Define a Label and put it in position
 
         l_ip_2=tk.Label(root,width=18,text='Speed:%s'%(var_spd.get()),fg=color_text,bg=color_btn)
-        l_ip_2.place(x=30,y=745)                         #Define a Label and put it in position
+        l_ip_2.place(x=30,y=445)                         #Define a Label and put it in position
 
         l_ip_4=tk.Label(root,width=18,text='Disconnected',fg=color_text,bg='#F44336')
-        l_ip_4.place(x=637,y=710)                         #Define a Label and put it in position
+        l_ip_4.place(x=637,y=410)                         #Define a Label and put it in position
 
         l_ip_5=tk.Label(root,width=18,text='Use default IP',fg=color_text,bg=color_btn)
-        l_ip_5.place(x=637,y=745)                         #Define a Label and put it in position
+        l_ip_5.place(x=637,y=445)                         #Define a Label and put it in position
 
         l_inter=tk.Label(root,width=45,text='< Car Adjustment              Camera Adjustment>\nW:Move Forward                 Look Up:I\nS:Move Backward            Look Down:K\nA:Turn Left                          Turn Left:J\nD:Turn Right                      Turn Right:L\nZ:Auto Mode On          Look Forward:H\nC:Auto Mode Off      Ultrasdonic Scan:X' ,
         fg='#212121',bg='#90a4ae')
-        l_inter.place(x=240,y=780)                       #Define a Label and put it in position
+        l_inter.place(x=240,y=480)                       #Define a Label and put it in position
 
         E1 = tk.Entry(root,show=None,width=16,bg="#37474F",fg='#eceff1')
         E1.place(x=170,y=40)                             #Define a Entry and put it in position
@@ -507,7 +552,7 @@ def loop():                       #GUI
         Btn1 = tk.Button(root, width=8, text='Backward',fg=color_text,bg=color_btn,relief='ridge')
         Btn2 = tk.Button(root, width=8, text='Left',fg=color_text,bg=color_btn,relief='ridge')
         Btn3 = tk.Button(root, width=8, text='Right',fg=color_text,bg=color_btn,relief='ridge')
-        Btn4 = tk.Button(root, width=8, text='Stop',fg=color_text,bg=color_btn,relief='ridge')
+        Btn4 = tk.Button(root, width=8, text='Auto OFF',fg=color_text,bg=color_btn,relief='ridge')
         Btn5 = tk.Button(root, width=8, text='Auto',fg=color_text,bg=color_btn,relief='ridge')
         
         Btn6 = tk.Button(root, width=8, text='Left',fg=color_text,bg=color_btn,relief='ridge')
@@ -522,22 +567,22 @@ def loop():                       #GUI
 
         BtnIP = tk.Button(root, width=8, text='Video',fg=color_text,bg=color_btn,relief='ridge',state='disabled')
 
-        BtnIP.place(x=100,y=875)
-        Btn0.place(x=100,y=795)
-        Btn1.place(x=100,y=830)
-        Btn2.place(x=30,y=830)
-        Btn3.place(x=170,y=830)
-        Btn4.place(x=170,y=875)
-        Btn5.place(x=30,y=875)
+        BtnIP.place(x=100,y=575)
+        Btn0.place(x=100,y=495)
+        Btn1.place(x=100,y=530)
+        Btn2.place(x=30,y=530)
+        Btn3.place(x=170,y=530)
+        Btn4.place(x=170,y=575)
+        Btn5.place(x=30,y=575)
         
-        Btn6.place(x=565,y=830)
-        Btn7.place(x=705,y=830)
-        Btn8.place(x=635,y=865)
-        Btn9.place(x=635,y=795)
-        Btn10.place(x=635,y=830)
+        Btn6.place(x=565,y=530)
+        Btn7.place(x=705,y=530)
+        Btn8.place(x=635,y=565)
+        Btn9.place(x=635,y=495)
+        Btn10.place(x=635,y=530)
         Btn11.place(x=705,y=10)
 
-        Btn12.place(x=535,y=707)
+        Btn12.place(x=535,y=407)
         Btn13.place(x=705,y=45)
 
 
