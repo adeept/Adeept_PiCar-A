@@ -50,6 +50,8 @@ b_spd      = num_import_int('E_M1:')         #Speed of the car
 t_spd      = num_import_int('E_M2:')         #Speed of the car
 left       = num_import_int('E_T1:')         #Motor Left
 right      = num_import_int('E_T2:')         #Motor Right
+dir_mid    = num_import_int('E_C1:')
+dis_mid    = num_import_int('E_C2:')
 
 print('b_spd=%d\n'%b_spd)
 print('t_spd=%d\n'%t_spd)
@@ -112,34 +114,37 @@ class Job(threading.Thread):#Threads for Auto Mode
 
 def video_net():      #Call this function to send video stream to PC
     client_socket = socket.socket()
-    client_socket.connect((ip_con, 8000))
+    try:
+        client_socket.connect((ip_con, 8000))
+    except:
+        pass
 
     connection = client_socket.makefile('wb')
     try:
-        with picamera.PiCamera() as camera:
-            camera.resolution = (640, 480)
-            camera.framerate = 24
-
-            camera.start_preview()
-            time.sleep(2)
-            camera.start_recording(connection, format='h264')
-            print('start recording')
-            while True:
-                camera.wait_recording(30)
-            camera.stop_recording()
+        camera.start_preview()
+        time.sleep(2)
+        camera.start_recording(connection, format='h264')
+        print('start recording')
+        camera.wait_recording(9999999999)
     finally:
+        try:
+            camera.stop_recording()
+        except:
+            pass
         connection.close()
         client_socket.close()
 
 def run():            #Main function
     global ip_con
     while True:
+        #print('SET %s'%dir_mid+' %s'%dis_mid+' %s'%b_spd+' %s'%t_spd+' %s'%left+' %s'%right)
         print('waiting for connection...')
         tcpCliSock, addr = tcpSerSock.accept()#Determine whether to connect
         print('...connected from :', addr)
+        tcpCliSock.send('SET %s'%dir_mid+' %s'%dis_mid+' %s'%b_spd+' %s'%t_spd+' %s'%left+' %s'%right)
         break
 
-    vn=threading.Thread(target=video_net) #Define a thread for connection
+    vn=threading.Thread(target=video_net)   #Define a thread for connection
     vn.setDaemon(True)                      #'True' means it is a front thread,it would close when the mainloop() closes
     vn.start()                              #Thread starts
 
@@ -152,32 +157,52 @@ def run():            #Main function
         
         elif 'spdset' in data:
             global spd_ad
-            spd_ad=float((str(data))[7:])      #Speed Adjustment
+            try:
+                spd_ad=float((str(data))[7:])      #Speed Adjustment
+            except:
+                print('wrong speed value')
         
         elif 'EC1set' in data:                 #Camera Adjustment
-            new_EC1=int((str(data))[7:])
-            replace_num('E_C1:',new_EC1)
+            try:
+                new_EC1=int((str(data))[7:])
+                replace_num('E_C1:',new_EC1)
+            except:
+                pass
 
         elif 'EC2set' in data:                 #Ultrasonic Adjustment
-            new_EC2=int((str(data))[7:])
-            replace_num('E_C2:',new_EC2)
-            print(new_EC2)
+            try:
+                new_EC2=int((str(data))[7:])
+                replace_num('E_C2:',new_EC2)
+            except:
+                pass
 
         elif 'EM1set' in data:                 #Motor A Speed Adjustment
-            new_EM1=int((str(data))[7:])
-            replace_num('E_M1:',new_EM1)
+            try:
+                new_EM1=int((str(data))[7:])
+                replace_num('E_M1:',new_EM1)
+            except:
+                pass
 
         elif 'EM2set' in data:                 #Motor B Speed Adjustment
-            new_EM2=int((str(data))[7:])
-            replace_num('E_M2:',new_EM2)
+            try:
+                new_EM2=int((str(data))[7:])
+                replace_num('E_M2:',new_EM2)
+            except:
+                pass
 
         elif 'ET1set' in data:                 #Motor A Turningf Speed Adjustment
-            new_ET1=int((str(data))[7:])
-            replace_num('E_T1:',new_ET1)
+            try:
+                new_ET1=int((str(data))[7:])
+                replace_num('E_T1:',new_ET1)
+            except:
+                pass
 
         elif 'ET2set' in data:                 #Motor B Turningf Speed Adjustment
-            new_ET2=int((str(data))[7:])
-            replace_num('E_T2:',new_ET2)
+            try:
+                new_ET2=int((str(data))[7:])
+                replace_num('E_T2:',new_ET2)
+            except:
+                pass
 
         elif 'scan' in data:
             dis_can=scan()                     #Start Scanning
@@ -336,6 +361,10 @@ if __name__ == '__main__':
     PORT = 10223                              #Define port serial 
     BUFSIZ = 1024                             #Define buffer size
     ADDR = (HOST, PORT)
+
+    camera=picamera.PiCamera()
+    camera.resolution = (640, 480)
+    camera.framerate = 24
 
     tcpSerSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tcpSerSock.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
