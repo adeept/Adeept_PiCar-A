@@ -8,7 +8,9 @@ Adeept is a technical service team of open source software and hardware. Dedicat
 
 ## Contact Info
  Technical Support:  support@adeept.com
+
  Customer Service:   service@adeept.com
+
  Website:            www.adeept.com
 
 
