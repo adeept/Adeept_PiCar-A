@@ -1,10 +1,11 @@
 #!/usr/bin/env/python
+# Product     : Adeept_PiCar-A
 # File name   : server.py
 # Description : The main program server takes control of Ultrasonic,Motor,Servo by receiving the order from the client through TCP and carrying out the corresponding operation.
 # Website     : www.adeept.com
 # E-mail      : support@adeept.com
 # Author      : William
-# Date        : 2018/08/22
+# Date        : 2018/12/18
 
 import RPi.GPIO as GPIO
 from multiprocessing import Process
@@ -309,10 +310,10 @@ def run():            #Main function
         
         elif 'stop' in data:                   #When server receive "stop" from client,car stops moving
             tcpCliSock.send('9')
-            setup()
+            #setup()
             motor.motorStop()
-            GPIO.cleanup()
-            setup()
+            #GPIO.cleanup()
+            #setup()
             continue
         
         elif 'home' in data:                   #When server receive "home" from client,camera looks forward
