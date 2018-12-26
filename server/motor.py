@@ -88,6 +88,3 @@ def motor(status, direction, speed):#Motor 1 positive and negative rotation
 def destroy():
 	motorStop()
 	GPIO.cleanup()             # Release resource
-
-
-
