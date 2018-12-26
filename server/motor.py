@@ -90,9 +90,4 @@ def destroy():
 	GPIO.cleanup()             # Release resource
 
 
-try:
-		pass
-except KeyboardInterrupt:
-		destroy()
-
 
