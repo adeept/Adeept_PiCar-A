@@ -22,7 +22,7 @@ Motor_B_Pin2  = 12
 Dir_forward   = 0
 Dir_backward  = 1
 
-pwn_A = 0
+pwm_A = 0
 pwm_B = 0
 
 def motorStop():#Motor stops
