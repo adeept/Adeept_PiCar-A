@@ -22,7 +22,7 @@ Motor_B_Pin2  = 12
 Dir_forward   = 0
 Dir_backward  = 1
 
-pwm_A = 0
+pwn_A = 0
 pwm_B = 0
 
 def motorStop():#Motor stops
@@ -58,13 +58,13 @@ def motor1(status, direction, speed):#Motor 2 positive and negative rotation
 		motorStop()
 	else:
 		if direction == Dir_forward:
-			GPIO.output(Motor_B_Pin1, GPIO.HIGH)
-			GPIO.output(Motor_B_Pin2, GPIO.LOW)
+			GPIO.output(Motor_B_Pin1, GPIO.LOW)
+			GPIO.output(Motor_B_Pin2, GPIO.HIGH)
 			pwm_B.start(100)
 			pwm_B.ChangeDutyCycle(speed)
 		elif direction == Dir_backward:
-			GPIO.output(Motor_B_Pin1, GPIO.LOW)
-			GPIO.output(Motor_B_Pin2, GPIO.HIGH)
+			GPIO.output(Motor_B_Pin1, GPIO.HIGH)
+			GPIO.output(Motor_B_Pin2, GPIO.LOW)
 			pwm_B.start(0)
 			pwm_B.ChangeDutyCycle(speed)
 def motor(status, direction, speed):#Motor 1 positive and negative rotation

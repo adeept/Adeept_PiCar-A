@@ -44,7 +44,7 @@ def loop():
     c = ultrasonic.checkdist()#Get the ultrasonic detection distance
     homedis = min(a,b,c)#Get the ultrasonic detection distance
     
-    print 'homedis = %0.2f m' %homedis
+    print('homedis = %0.2f m' %homedis)
     
     motor.motorStop()#Stop the car
     
@@ -58,17 +58,16 @@ def loop():
         b = ultrasonic.checkdist()
         c = ultrasonic.checkdist()
         leftdis = min(a,b,c)
-        print 'leftdis = %0.2f m' %leftdis
+        print('leftdis = %0.2f m' %leftdis)
         car_dir.dis_right(pwm1)
         time.sleep(1)
         a = ultrasonic.checkdist()
         b = ultrasonic.checkdist()
         c = ultrasonic.checkdist()
         rightdis = min(a,b,c)
-        print 'rightdis = %0.2f m' %rightdis
+        print('rightdis = %0.2f m' %rightdis)
         
         if leftdis < dis and  rightdis < dis:#Judgment left and right
-            print "ccccccccccc"
             if leftdis >= rightdis:#There are obstacles on the right
                 motor.motor(status, backward, b_spd)
                 #motor.motor(status,backward,left)

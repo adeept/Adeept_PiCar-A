@@ -39,14 +39,14 @@ def dir_home(dir_ch):
 def dir_left(dir_ch):#Camera moves left
     global add
     if add >= 565:
-        print "teering gear reached its peak"
+        print("teering gear reached its peak")
     else:
         add+=10
     pwm.set_pwm(dir_ch, 0, add)
 def dir_right(dir_ch):#Camera moves right
     global add
     if add <= 265:
-        print "teering gear reached its peak"
+        print("teering gear reached its peak")
     else:
         add-=10
         pwm.set_pwm(dir_ch, 0, add)
@@ -63,7 +63,7 @@ def dis_right(dis_ch):#Ultrasound moves right
 def dir_Left(dir_ch):#Camera moves up
     global cat
     if cat >= 580:
-        print "teering gear reached its peak"
+        print("teering gear reached its peak")
     else:
         cat+=10
     pwm.set_pwm(dir_ch, 0, cat)
@@ -71,7 +71,7 @@ def dir_Left(dir_ch):#Camera moves up
 def dir_Right(dir_ch):#Camera moves down
     global cat
     if cat <= 270:
-        print "teering gear reached its peak"
+        print("teering gear reached its peak")
     else:
         cat-=10
         pwm.set_pwm(dir_ch, 0, cat)

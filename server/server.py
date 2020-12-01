@@ -1,4 +1,4 @@
-#!/usr/bin/env/python
+#!/usr/bin/env/python3
 # Product     : PiCar-A
 # File name   : server.py
 # Description : The main program server takes control of Ultrasonic,Motor,Servo by receiving the order from the client through TCP and carrying out the corresponding operation.
@@ -15,6 +15,7 @@ import car_dir
 import ultrasonic
 import auto
 import socket
+import FPV
 import time
 import threading
 from  threading import *
@@ -107,48 +108,34 @@ class Job(threading.Thread):#Threads for Auto Mode
         self.__flag.clear()
     
     def resume(self):
-        self.Flag.set()
+        self.__flag.set()
     
     def stop(self):
         self.__flag.set()
         self.__running.clear()
 
-def video_net():      #Call this function to send video stream to PC
-    client_socket = socket.socket()
-    try:
-        client_socket.connect((ip_con, 8000))
-    except:
-        pass
 
-    connection = client_socket.makefile('wb')
-    try:
-        camera.start_preview()
-        time.sleep(2)
-        camera.start_recording(connection, format='h264')
-        print('start recording')
-        camera.wait_recording(9999999999)
-    finally:
-        try:
-            camera.stop_recording()
-        except:
-            pass
-        connection.close()
-        client_socket.close()
+def FPV_thread():
+    fpv=FPV.FPV()
+    print(addr[0])
+    fpv.capture_thread(addr[0])
+
 
 def run():            #Main function
-    global ip_con
+    global ip_con, addr
+    st_s = 0
     while True:
         #print('SET %s'%dir_mid+' %s'%dis_mid+' %s'%b_spd+' %s'%t_spd+' %s'%left+' %s'%right)
         print('waiting for connection...')
         tcpCliSock, addr = tcpSerSock.accept()#Determine whether to connect
         print('...connected from :', addr)
-        tcpCliSock.send('SET %s'%dir_mid+' %s'%dis_mid+' %s'%b_spd+' %s'%t_spd+' %s'%left+' %s'%right)
+        tcpCliSock.send(('SET %s'%dir_mid+' %s'%dis_mid+' %s'%b_spd+' %s'%t_spd+' %s'%left+' %s'%right).encode())
         break
 
-    vn=threading.Thread(target=video_net)   #Define a thread for connection
-    vn.setDaemon(True)                      #'True' means it is a front thread,it would close when the mainloop() closes
-    vn.start()                              #Thread starts
-
+    fps_threading=threading.Thread(target=FPV_thread)         #Define a thread for FPV and OpenCV
+    fps_threading.setDaemon(True)                             #'True' means it is a front thread,it would close when the mainloop() closes
+    fps_threading.start()                                     #Thread starts
+    st = Job()
     while True: 
         data = ''
         data = tcpCliSock.recv(BUFSIZ).decode()#Get instructions
@@ -207,97 +194,70 @@ def run():            #Main function
 
         elif 'scan' in data:
             dis_can=scan()                     #Start Scanning
-
-            str_list_1=dis_can[0:100]          #Divide the list to make it samller to send 
+            str_list_1=dis_can                 #Divide the list to make it samller to send 
             str_index=' '                      #Separate the values by space
             str_send_1=str_index.join(str_list_1)+' '
-            tcpCliSock.send(str(str_send_1))   #Send Part 1
-            #print(str_send_1)
-
-            time.sleep(0.3)
-
-            str_list_2=dis_can[101:200]
-            str_send_2=str_index.join(str_list_2)+' '
-            tcpCliSock.send(str(str_send_2))   #Send Part 2
-            #print(str_send_2)
-
-            time.sleep(0.3)
-
-            str_list_3=dis_can[201:300]
-            str_send_3=str_index.join(str_list_3)+' '
-            tcpCliSock.send(str(str_send_3))   #Send Part 3
-            #print(str_send_3)
-
-            time.sleep(0.3)
-
-            str_list_4=dis_can[301:408]
-            str_send_4=str_index.join(str_list_4)
-            tcpCliSock.send(str(str_send_4))   #Send Part 4
-            #print(str_send_4)
-
-            time.sleep(0.3)
-
-            tcpCliSock.send('finished')        #Send 'finished' tell the client to stop receiving the list of dis_can
-
-            #print(dis_can)
-            #print(len(dis_can))
+            tcpCliSock.sendall((str(str_send_1)).encode())   #Send Data
+            tcpCliSock.send('finished'.encode())        #Sending 'finished' tell the client to stop receiving the list of dis_can
         
         elif 'forward' in data:                #When server receive "forward" from client,car moves forward
-            global b_spd
-            global t_spd
-            tcpCliSock.send('1')
+            tcpCliSock.send('1'.encode())
             motor.motor(status, forward, b_spd*spd_ad)
             motor.motor1(status,forward,t_spd*spd_ad)
             direction = forward
         
         elif 'backward' in data:               #When server receive "backward" from client,car moves backward
-            tcpCliSock.send('2')
+            tcpCliSock.send('2'.encode())
             motor.motor(status, backward, b_spd*spd_ad)
             motor.motor1(status, backward, t_spd*spd_ad)
             direction = backward
         
         elif 'left' in data:                   #When server receive "left" from client,camera turns left
-            tcpCliSock.send('7')
+            tcpCliSock.send('7'.encode())
             car_dir.dir_left(pwm1)
+            #car_dir.dir_right(pwm1)
             continue
         
         elif 'right' in data:                  #When server receive "right" from client,camera turns right
-            tcpCliSock.send('8')
+            tcpCliSock.send('8'.encode())
             car_dir.dir_right(pwm1)
+            #car_dir.dir_left(pwm1)
             continue
         
         elif 'on' in data:                     #When server receive "on" from client,camera looks up
-            tcpCliSock.send('5')
+            tcpCliSock.send('5'.encode())
             car_dir.dir_Left(pwm0)
+            #car_dir.dir_Right(pwm0)
             continue
         
         elif 'under' in data:                  #When server receive "under" from client,camera looks down
-            tcpCliSock.send('6')
+            tcpCliSock.send('6'.encode())
             car_dir.dir_Right(pwm0)
+            #car_dir.dir_Left(pwm0)
             continue
         
         elif 'Left' in data:                   #When server receive "Left" from client,car turns left
-            tcpCliSock.send('3')
+            tcpCliSock.send('3'.encode())
             motor.motor(status, forward, left*spd_ad)
             motor.motor1(status, forward, b_spd*spd_ad)
             #print('LLL')
             continue
 
         elif 'BLe' in data:                    #When server receive "BLeft" from client,car move back and left
-            tcpCliSock.send('3')
-            motor.motor(status, 1, left*spd_ad)
-            motor.motor1(status, 1, b_spd*spd_ad)
+            tcpCliSock.send('3'.encode())
+            motor.motor(status, backward, left*spd_ad)
+            motor.motor1(status, backward, b_spd*spd_ad)
             #print("BL")
             continue
 
         elif 'Right' in data:                  #When server receive "Right" from client,car turns right
-            tcpCliSock.send('4')
+            tcpCliSock.send('4'.encode())
             motor.motor(status, forward, b_spd*spd_ad)
             motor.motor1(status, forward, right*spd_ad)
             continue
 
         elif 'BRi' in data:                    #When server receive "BRight" from client,car move back and right
-            tcpCliSock.send('4')
+            tcpCliSock.send('4'.encode())
             motor.motor(status, backward, b_spd*spd_ad)
             motor.motor1(status, backward, right*spd_ad)
             continue
@@ -309,7 +269,7 @@ def run():            #Main function
             continue
         
         elif 'stop' in data:                   #When server receive "stop" from client,car stops moving
-            tcpCliSock.send('9')
+            tcpCliSock.send('9'.encode())
             #setup()
             motor.motorStop()
             #GPIO.cleanup()
@@ -322,34 +282,27 @@ def run():            #Main function
             continue
         
         elif 'Stop' in data:                   #When server receive "Stop" from client,Auto Mode switches off
-            tcpCliSock.send('9')
+            tcpCliSock.send('9'.encode())
             try:
-                st.stop()
+                st.pause()
             except:
                 pass
             motor.motorStop()
+            time.sleep(0.4)
+            motor.motorStop()
         
         elif 'auto' in data:                   #When server receive "auto" from client,start Auto Mode
-            tcpCliSock.send('0')
-            st = Job()
-            st.start()
+            tcpCliSock.send('0'.encode())
+            if st_s == 0:
+                st.start()
+                st_s = 1
+            else:
+                st.resume()
             continue
 
-        elif 'IPCON' in data:
-            try:
-                data=str(data)
-                ip_var=data.split()
-                ip_con=ip_var[1]
-                print(ip_con)
-                vi=threading.Thread(target=video_net) #Define a thread for data receiving
-                vi.setDaemon(True)                    #'True' means it is a front thread,it would close when the mainloop() closes
-                vi.start()                            #Thread starts
-                print('start thread')
-            except:
-                pass
 
         else:
-            print 'Command Error! Cannot recongnize command: ' +data
+            pass
 
 def destroy():
     GPIO.cleanup()
@@ -363,10 +316,6 @@ if __name__ == '__main__':
     BUFSIZ = 1024                             #Define buffer size
     ADDR = (HOST, PORT)
 
-    camera=picamera.PiCamera()
-    camera.resolution = (640, 480)
-    camera.framerate = 24
-
     tcpSerSock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     tcpSerSock.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
     tcpSerSock.bind(ADDR)
@@ -377,4 +326,6 @@ if __name__ == '__main__':
         run()
     except KeyboardInterrupt:
         destroy()
+        tcpClicSock.close()          # Close socket or it may not connect with the server again
+        cv2.destroyAllWindows()
 

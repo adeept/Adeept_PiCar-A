@@ -12,6 +12,10 @@ import time
 import threading as thread
 import tkinter as tk
 import math
+import cv2
+import zmq
+import base64
+import numpy as np
 
 stat=0          #A status value,ensure the mainloop() runs only once
 tcpClicSock=''  #A global variable,for future socket connection
@@ -32,7 +36,69 @@ r_stu=0
 
 BtnIP=''
 ipaddr=''
-ipcon=0
+
+frame_num = 0
+fps = 0
+
+def video_thread():
+    global footage_socket, font, frame_num, fps
+    context = zmq.Context()
+    footage_socket = context.socket(zmq.SUB)
+    footage_socket.bind('tcp://*:5555')
+    footage_socket.setsockopt_string(zmq.SUBSCRIBE, np.unicode(''))
+
+    font = cv2.FONT_HERSHEY_SIMPLEX
+
+    frame_num = 0
+    fps = 0
+
+def get_FPS():
+    global frame_num, fps
+    while 1:
+        try:
+            time.sleep(1)
+            fps = frame_num
+            frame_num = 0
+        except:
+            time.sleep(1)
+
+def opencv_r():
+    global frame_num
+    while True:
+        try:
+            frame = footage_socket.recv_string()
+            img = base64.b64decode(frame)
+            npimg = np.frombuffer(img, dtype=np.uint8)
+            source = cv2.imdecode(npimg, 1)
+            cv2.putText(source,('PC FPS: %s'%fps),(40,20), font, 0.5,(255,255,255),1,cv2.LINE_AA)
+            try:
+                cv2.putText(source,('CPU Temperature: %s'%CPU_TEP),(370,350), font, 0.5,(128,255,128),1,cv2.LINE_AA)
+                cv2.putText(source,('CPU Usage: %s'%CPU_USE),(370,380), font, 0.5,(128,255,128),1,cv2.LINE_AA)
+                cv2.putText(source,('RAM Usage: %s'%RAM_USE),(370,410), font, 0.5,(128,255,128),1,cv2.LINE_AA)
+
+                if ultrasonicMode == 1:
+                    cv2.line(source,(320,240),(260,300),(255,255,255),1)
+                    cv2.line(source,(210,300),(260,300),(255,255,255),1)
+                    cv2.putText(source,('%sm'%ultra_data),(210,290), font, 0.5,(255,255,255),1,cv2.LINE_AA)
+            except:
+                pass
+            #cv2.putText(source,('%sm'%ultra_data),(210,290), font, 0.5,(255,255,255),1,cv2.LINE_AA)
+            cv2.imshow("Stream", source)
+            frame_num += 1
+            cv2.waitKey(1)
+
+        except:
+            time.sleep(0.5)
+            break
+
+fps_threading=thread.Thread(target=get_FPS)         #Define a thread for FPV and OpenCV
+fps_threading.setDaemon(True)                             #'True' means it is a front thread,it would close when the mainloop() closes
+fps_threading.start()                                     #Thread starts
+
+video_threading=thread.Thread(target=video_thread)         #Define a thread for FPV and OpenCV
+video_threading.setDaemon(True)                             #'True' means it is a front thread,it would close when the mainloop() closes
+video_threading.start()                                     #Thread starts
+
 
 def replace_path(initial,new_num):  
     newline=""
@@ -54,44 +120,6 @@ def import_path(initial):
     snum=r[begin:]
     n=snum
     return n             #Call this function to import data from '.txt' file
-
-def video_show():
-    global ipcon
-    server_socket = socket()
-    server_socket.bind(('0.0.0.0', 8000))
-    server_socket.listen(0)
-    connection = server_socket.accept()[0].makefile('rb')
-    try:
-        vlc_path=import_path('addr:')
-        cmdline = [vlc_path, '--demux', 'h264', '-']
-        player = subprocess.Popen(cmdline, stdin=subprocess.PIPE)
-        while True:
-            try:
-                data = connection.read(128)
-                if not data:
-                    break
-            except:
-                pass
-            try:
-                player.stdin.write(data)
-            except:
-                connection.close()
-                server_socket.close()
-                player.terminate()                     #Call this function to set up a server for the car to send the video back
-                BtnIP.config(state='normal')
-                ipcon=0
-                break
-    finally:
-        connection.close()
-        server_socket.close()
-        player.terminate()                     #Call this function to set up a server for the car to send the video back
-        BtnIP.config(state='normal')
-        ipcon=0
-
-def ip_send():
-    time.sleep(1)
-    tcpClicSock.send(('IPCON %s'%ipaddr).encode())
-    print(ipaddr)                        #Call this function to send the IP of server to client(only for video stream)
 
 def call_forward(event):         #When this function is called,client commands the car to move forward
     global c_f_stu
@@ -277,31 +305,12 @@ def loop():                       #GUI
         E_T2 = tk.Entry(root,show=None,width=16,bg="#37474F",fg='#eceff1',exportselection=0,justify='center')
         E_T2.place(x=785,y=495)                             #Define a Entry and put it in position
 
-        BtnVLC = tk.Button(root, width=15, text='VLC Path',fg=color_text,bg=color_btn,relief='ridge')
-        BtnVLC.place(x=785,y=550)
-        E_VLC = tk.Entry(root,show=None,width=16,bg="#37474F",fg='#eceff1')
-        E_VLC.place(x=785,y=585)                             #Define a Entry and put it in position
-
         E_C1.insert ( 0, 'Default:425' ) 
         E_C2.insert ( 0, 'Default:425' ) 
         E_M1.insert ( 0, 'Default:100' ) 
         E_M2.insert ( 0, 'Default:100' )
         E_T1.insert ( 0, 'Default:30' ) 
         E_T2.insert ( 0, 'Default:30' )
-        E_VLC.insert ( 0, '%s'%import_path('addr:') )  
-
-        def ipcon(event):
-            global ipcon
-            if ipcon == 0:
-                print('set up video server')
-                BtnIP.config(state='disabled')
-                ipcon=1
-                vs=thread.Thread(target=video_show)   #Define a thread for video stream receiving
-                vs.setDaemon(True)                    #'True' means it is a front thread,it would close when the mainloop() closes
-                vs.start()                            #Thread starts
-                ip_send_thread=thread.Thread(target=ip_send)
-                ip_send_thread.setDaemon(True)
-                ip_send_thread.start()
 
         def spd_set():                 #Call this function for speed adjustment
             tcpClicSock.send(('spdset:%s'%var_spd.get()).encode())   #Get a speed value from IntVar and send it to the car
@@ -324,11 +333,6 @@ def loop():                       #GUI
 
         def ET2_set(event):            #Call this function for speed adjustment
             tcpClicSock.send(('ET2set:%s'%E_T2.get()).encode())   #Get a speed value from IntVar and send it to the car
-
-        def VLC_set(event):       #Call this function to save a new VLC path
-            new_path=E_VLC.get()
-            if len(new_path) > 7:
-                replace_path('addr:',new_path)
 
         def connect(event):       #Call this function to connect with the server
             if ip_stu == 1:
@@ -384,6 +388,10 @@ def loop():                       #GUI
                         at.setDaemon(True)                    #'True' means it is a front thread,it would close when the mainloop() closes
                         at.start()                            #Thread starts
                         ipaddr=tcpClicSock.getsockname()[0]
+
+                        video_threading=thread.Thread(target=opencv_r)         #Define a thread for FPV and OpenCV
+                        video_threading.setDaemon(True)                             #'True' means it is a front thread,it would close when the mainloop() closes
+                        video_threading.start()                                     #Thread starts
                         break
                     else:
                         break
@@ -587,7 +595,6 @@ def loop():                       #GUI
 
 
         # Bind the buttons with the corresponding callback function
-        BtnIP.bind('<ButtonPress-1>', ipcon)
         Btn0.bind('<ButtonPress-1>', call_forward)
         Btn1.bind('<ButtonPress-1>', call_back)
         Btn2.bind('<ButtonPress-1>', call_Left)
@@ -615,7 +622,6 @@ def loop():                       #GUI
         BtnM2.bind('<ButtonPress-1>', EM2_set)
         BtnT1.bind('<ButtonPress-1>', ET1_set)
         BtnT2.bind('<ButtonPress-1>', ET2_set)
-        BtnVLC.bind('<ButtonPress-1>', VLC_set)
         # Bind the keys with the corresponding callback function
         root.bind('<KeyPress-w>', call_forward) 
         root.bind('<KeyPress-a>', call_Left)
@@ -627,8 +633,6 @@ def loop():                       #GUI
         root.bind('<KeyRelease-a>', call_stop)
         root.bind('<KeyRelease-d>', call_stop)
         root.bind('<KeyRelease-s>', call_stop)
-
-        root.bind('<KeyRelease-v>', ipcon)
 
         # Press these keyss to call the corresponding function()
         root.bind('<KeyPress-c>', call_Stop)
