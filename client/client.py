@@ -16,10 +16,7 @@ import cv2
 import zmq
 import base64
 import numpy as np
-import os
 
-curpath = os.path.realpath(__file__)
-thisPath = "/" + os.path.dirname(curpath)
 stat=0          #A status value,ensure the mainloop() runs only once
 tcpClicSock=''  #A global variable,for future socket connection
 BUFSIZ=1024     #Set a buffer size
@@ -215,16 +212,16 @@ def scan(event):                 #When this function is called,client commands t
 def replace_num(initial,new_num):  
     newline=""
     str_num=str(new_num)
-    with open(thisPath + "/ip.txt","r") as f:
+    with open("ip.txt","r") as f:
         for line in f.readlines():
             if(line.find(initial) == 0):
                 line = initial+"%s" %(str_num)
             newline += line
-    with open(thisPath + "/ip.txt","w") as f:
+    with open("ip.txt","w") as f:
         f.writelines(newline)    #Call this function to replace data in '.txt' file
 
 def num_import(initial):
-    with open(thisPath + "/ip.txt") as f:
+    with open("ip.txt") as f:
         for line in f.readlines():
             if(line.find(initial) == 0):
                 r=line
