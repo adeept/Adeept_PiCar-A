@@ -10,9 +10,12 @@ import motor
 import ultrasonic
 import car_dir
 import time
+import os
 
+curpath = os.path.realpath(__file__)
+thisPath = "/" + os.path.dirname(curpath)
 def num_import_int(initial):       #Call this function to import data from '.txt' file
-    with open("set.txt") as f:
+    with open(thisPath + "/set.txt") as f:
         for line in f.readlines():
             if(line.find(initial) == 0):
                 r=line

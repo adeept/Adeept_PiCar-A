@@ -7,13 +7,16 @@
 # Date        : 2018/08/22
 from __future__ import division
 import time
+import os
 
 import Adafruit_PCA9685
 
+curpath = os.path.realpath(__file__)
+thisPath = "/" + os.path.dirname(curpath)
 pwm = Adafruit_PCA9685.PCA9685()
 
 def num_import_int(initial):       #Call this function to import data from '.txt' file
-    with open("set.txt") as f:
+    with open(thisPath + "/set.txt") as f:
         for line in f.readlines():
             if(line.find(initial) == 0):
                 r=line

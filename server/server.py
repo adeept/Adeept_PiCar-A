@@ -22,21 +22,23 @@ from  threading import *
 import Adafruit_PCA9685
 import picamera
 
+curpath = os.path.realpath(__file__)
+thisPath = "/" + os.path.dirname(curpath)
 pwm = Adafruit_PCA9685.PCA9685()    #Ultrasonic Control
 
 def replace_num(initial,new_num):   #Call this function to replace data in '.txt' file
     newline=""
     str_num=str(new_num)
-    with open("set.txt","r") as f:
+    with open(thisPath + "/set.txt","r") as f:
         for line in f.readlines():
             if(line.find(initial) == 0):
                 line = initial+"%s" %(str_num+"\n")
             newline += line
-    with open("set.txt","w") as f:
+    with open(thisPath + "/set.txt","w") as f:
         f.writelines(newline)
 
 def num_import_int(initial):        #Call this function to import data from '.txt' file
-    with open("set.txt") as f:
+    with open(thisPath + "/set.txt") as f:
         for line in f.readlines():
             if(line.find(initial) == 0):
                 r=line
