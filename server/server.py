@@ -240,14 +240,14 @@ def run():            #Main function
         
         elif 'Left' in data:                   #When server receive "Left" from client,car turns left
             tcpCliSock.send('3'.encode())
-            motor.motor(status, forward, left*spd_ad)
+            motor.motor(0, forward, left*spd_ad)
             motor.motor1(status, forward, b_spd*spd_ad)
             #print('LLL')
             continue
 
         elif 'BLe' in data:                    #When server receive "BLeft" from client,car move back and left
             tcpCliSock.send('3'.encode())
-            motor.motor(status, backward, left*spd_ad)
+            motor.motor(0, backward, left*spd_ad)
             motor.motor1(status, backward, b_spd*spd_ad)
             #print("BL")
             continue
@@ -255,13 +255,13 @@ def run():            #Main function
         elif 'Right' in data:                  #When server receive "Right" from client,car turns right
             tcpCliSock.send('4'.encode())
             motor.motor(status, forward, b_spd*spd_ad)
-            motor.motor1(status, forward, right*spd_ad)
+            motor.motor1(0, forward, right*spd_ad)
             continue
 
         elif 'BRi' in data:                    #When server receive "BRight" from client,car move back and right
             tcpCliSock.send('4'.encode())
             motor.motor(status, backward, b_spd*spd_ad)
-            motor.motor1(status, backward, right*spd_ad)
+            motor.motor1(0, backward, right*spd_ad)
             continue
         
         elif 'exit' in data:                   #When server receive "exit" from client,server shuts down
