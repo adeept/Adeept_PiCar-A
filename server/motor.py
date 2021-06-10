@@ -55,7 +55,9 @@ def motor1(status, direction, speed):#Motor 2 positive and negative rotation
 
 	global  pwm_B
 	if status == 0: # stop
-		motorStop()
+		GPIO.output(Motor_B_Pin1, GPIO.LOW)
+		GPIO.output(Motor_B_Pin2, GPIO.LOW)
+		GPIO.output(Motor_B_EN, GPIO.LOW)
 	else:
 		if direction == Dir_forward:
 			GPIO.output(Motor_B_Pin1, GPIO.LOW)
@@ -70,7 +72,9 @@ def motor1(status, direction, speed):#Motor 2 positive and negative rotation
 def motor(status, direction, speed):#Motor 1 positive and negative rotation
 	global pwm_A
 	if status == 0: # stop
-		motorStop()
+		GPIO.output(Motor_A_Pin1, GPIO.LOW)
+		GPIO.output(Motor_A_Pin2, GPIO.LOW)
+		GPIO.output(Motor_A_EN, GPIO.LOW)
 	else:
 		if direction == Dir_forward:#
 			GPIO.output(Motor_A_Pin1, GPIO.HIGH)
