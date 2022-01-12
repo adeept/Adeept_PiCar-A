@@ -20,18 +20,18 @@ def replace_num(file,initial,new_num):
     with open(file,"w") as f:
         f.writelines(newline)
 
-os.system("sudo apt-get purge wolfram-engine")
-os.system("sudo apt-get purge libreoffice*")
-os.system("sudo apt-get clean")
-os.system("sudo apt-get autoremove")
+os.system("sudo apt-get purge -y wolfram-engine")
+os.system("sudo apt-get purge -y libreoffice*")
+os.system("sudo apt-get -y clean")
+os.system("sudo apt-get -y autoremove")
 
-for x in range(1,4):
-	if os.system("sudo apt-get update") == 0:
-		break
+# for x in range(1,4):
+# 	if os.system("sudo apt-get update") == 0:
+# 		break
 
-for x in range(1,4):
-	if os.system("sudo apt-get -y upgrade") == 0:
-		break
+# for x in range(1,4):
+# 	if os.system("sudo apt-get -y upgrade") == 0:
+# 		break
 
 for x in range(1,4):
 	if os.system("sudo apt-get install -y i2c-tools") == 0:
@@ -55,7 +55,7 @@ for x in range(1,4):
 		break
 
 for x in range(1,4):
-	if os.system("sudo pip3 install numpy") == 0:
+	if os.system("sudo pip3 install numpy==1.19.0") == 0:
 		break
 
 for x in range(1,4):
