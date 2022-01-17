@@ -20,6 +20,10 @@ def replace_num(file,initial,new_num):
     with open(file,"w") as f:
         f.writelines(newline)
 
+for x in range(1,4):
+	if os.system("sudo apt-get -y upgrade") == 0:
+		break
+
 os.system("sudo apt-get purge -y wolfram-engine")
 os.system("sudo apt-get purge -y libreoffice*")
 os.system("sudo apt-get -y clean")
@@ -29,9 +33,9 @@ os.system("sudo apt-get -y autoremove")
 # 	if os.system("sudo apt-get update") == 0:
 # 		break
 
-# for x in range(1,4):
-# 	if os.system("sudo apt-get -y upgrade") == 0:
-# 		break
+for x in range(1,4):
+	if os.system("sudo pip3 install -U pip") == 0:
+		break
 
 for x in range(1,4):
 	if os.system("sudo apt-get install -y i2c-tools") == 0:
@@ -50,9 +54,6 @@ try:
 except:
 	print('try again')
 
-for x in range(1,4):
-	if os.system("sudo pip3 install -U pip") == 0:
-		break
 
 for x in range(1,4):
 	if os.system("sudo pip3 install numpy") == 0:
@@ -115,7 +116,7 @@ try:
 except:
 	pass
 
-os.system("sudo cp -f //home/pi/adeept_picar-a_opencv/server/set.txt //home/pi/set.txt")
+os.system("sudo cp -f //home/pi/Adeept_Picar-A/server/set.txt //home/pi/set.txt")
 
 print('restarting')
 
